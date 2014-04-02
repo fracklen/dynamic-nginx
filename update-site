@@ -1,0 +1,72 @@
+#!/bin/bash
+set -e
+
+SITE=$1
+
+DEFAULTS_PATH="/etc/default/lokalebasen-service-descovery"
+if [[ -e "$DEFAULTS_PATH" ]]
+  then
+  . "$DEFAULTS_PATH"
+else
+  NGINX_CONF_PATH=/etc/nginx/
+fi
+
+
+DOMAIN="`etcdget sites-available/${SITE}/DOMAIN | jq -r '.node.value'`"
+ROOT="`etcdget sites-available/${SITE}/ROOT | jq -r '.node.value'`"
+ALIASES="`etcdget sites-available/${SITE}/ALIASES | jq -r '.node.value'`"
+
+CONF_PATH="${NGINX_CONF_PATH}sites-available/${SITE}"
+TMP_PATH="${NGINX_CONF_PATH}sites-available/${SITE}.tmp"
+ENABLED_PATH="${NGINX_CONF_PATH}sites-enabled/${SITE}"
+
+mkdir -p /var/log/$SITE/
+
+# touch and clear TMP_PATH
+echo "" > $TMP_PATH
+
+cat >>$TMP_PATH <<EOF
+include /etc/nginx/site-includes/${SITE}.upstream*;
+
+server {
+  client_max_body_size 4G;
+  listen 80;
+  server_name ${DOMAIN};
+  large_client_header_buffers 4 16k;
+
+  keepalive_timeout 5;
+  access_log /var/log/${SITE}/access.log;
+
+  location ${ROOT} {
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header Host \$http_host;
+    proxy_redirect off;
+    proxy_pass http://${SITE};
+  }
+}
+EOF
+
+if [ "$ALIASES" != "null" ]
+  then
+  for A in $ALIASES
+  do
+    cat >>$TMP_PATH <<EOF
+
+server {
+  listen 80 default_server;
+  server_name ${A};
+  rewrite ^ http://${A}\$request_uri? permanent;
+}
+EOF
+  done
+fi
+
+# Move into place
+mv $TMP_PATH $CONF_PATH
+
+# Enable site
+ln -sf "$CONF_PATH" "$ENABLED_PATH"
+
+update-upstream --force $SITE > $OUTPUT
+
+watch-site $SITE > $OUTPUT &

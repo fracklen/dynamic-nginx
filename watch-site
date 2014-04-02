@@ -1,0 +1,19 @@
+#!/bin/bash
+
+SITE=$1
+
+mkdir -p /var/log/lokalebasen-service-discovery
+PID_FILE="/var/log/lokalebasen-service-discovery/${SITE}.pid"
+
+if [[ -e "$PID_FILE" ]]
+  then
+  exit 0
+fi
+
+echo "$$" > $PID_FILE
+trap "rm $PID_FILE" INT TERM EXIT
+
+while true
+do
+  update-upstream $SITE > $OUTPUT
+done

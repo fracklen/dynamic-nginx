@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+SITE=$1
+REVISION="`etcdget $SITE/current_revision | jq -r '.node.value'`"
+UPSTREAMS="`etcdget $SITE/nodes/$REVISION | jq '.node.nodes[] | {value}' | jq -r '.value'`"
+
+echo "upstream $SITE {"
+for UPSTREAM in $UPSTREAMS
+do
+	echo "  server $UPSTREAM fail_timeout=0;"
+done
+echo "}"
+

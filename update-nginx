@@ -1,0 +1,24 @@
+#!/bin/bash
+set -e
+
+PID_FILE="/var/log/lokalebasen-service-discovery.pid"
+
+if [[ -e "$PID_FILE" ]]
+  then
+  exit 0
+fi
+
+echo "$$" > $PID_FILE
+trap "rm $PID_FILE" INT TERM EXIT
+
+
+etcdwatch --recursive sites-enabled/
+SITES="`etcdget sites-enabled/ | jq -r '.node.nodes[].value'`"
+
+for SITE in $SITES
+do
+  update-site $SITE
+done
+
+echo Reloading nginx... > $OUTPUT
+kill -HUP `cat /run/nginx.pid`

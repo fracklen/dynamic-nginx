@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ -z "$ETCD_URL" ]
+then
+  echo "ETCD_URL must be set"
+  exit 1
+fi
+
+KEY=$1
+VALUE=$2
+
+curl ${ETCD_URL}/v2/keys/${KEY} -XPUT -d value="$VALUE"
