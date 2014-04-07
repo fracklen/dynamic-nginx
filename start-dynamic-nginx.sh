@@ -1,6 +1,5 @@
 #!/bin/bash
 
-nginx > $OUTPUT &
 
 export PATH=$PATH:/usr/local/bin
 
@@ -14,8 +13,8 @@ do
 done
 
 # Keep listening
+watch-sites &
+WATCHER=$$
+trap "kill -9 $WATCHER" TERM EXIT KILL
 
-while true
-do
-  update-nginx > $OUTPUT
-done
+exec nginx > $OUTPUT 2> $OUTPUT
