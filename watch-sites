@@ -2,5 +2,5 @@
 
 while true
 do
-  update-nginx > $OUTPUT
+  update-nginx
 done

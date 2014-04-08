@@ -13,12 +13,15 @@ trap "rm $PID_FILE" INT TERM EXIT
 
 
 etcdwatch --recursive sites-enabled/
-SITES="`etcdget sites-enabled/ | jq -r '.node.nodes[].value'`"
+SITES="`etcdget sites-enabled/ | jq -r '.node.nodes[].value' | grep -v null`"
 
 for SITE in $SITES
 do
-  update-site $SITE
+  update-site $SITE 2>&1 >> $OUTPUT
 done
 
-echo Reloading nginx... > $OUTPUT
-kill -HUP `cat /run/nginx.pid`
+echo "Reloading nginx..." >> $OUTPUT
+
+nginx -t >> $OUTPUT
+
+nginx -t && nginx -s reload

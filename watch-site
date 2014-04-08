@@ -15,5 +15,5 @@ trap "rm $PID_FILE" INT TERM EXIT
 
 while true
 do
-  update-upstream $SITE > $OUTPUT
+  update-upstream $SITE >> $OUTPUT
 done

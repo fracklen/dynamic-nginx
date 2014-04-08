@@ -14,4 +14,4 @@ fi
 
 KEY=$1
 
-curl -s ${ETCD_URL}/v2/keys/${KEY}?wait=true${RECURSIVE}
+curl -s -L ${ETCD_URL}/v2/keys/${KEY}?wait=true${RECURSIVE}

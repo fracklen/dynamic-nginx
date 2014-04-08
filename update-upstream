@@ -12,10 +12,14 @@ fi
 
 if [ -z "$FORCE" ]
   then
+  echo "Watcing upstream for $SITE" >> $OUTPUT
   etcdwatch $SITE/current_revision
 fi
 
 new-upstream-config ${SITE} > /etc/nginx/site-includes/${SITE}.upstream
 
-echo Reloading nginx... > $OUTPUT
-kill -HUP `cat /run/nginx.pid`
+echo "Reloading nginx..." >> $OUTPUT
+
+nginx -t >> $OUTPUT
+
+nginx -t && nginx -s reload
